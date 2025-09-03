@@ -3,7 +3,7 @@
  * @description This script manages the entire lifecycle and interactivity of the DI AERO frontend,
  * including UI rendering, event handling, real-time data simulation, and page navigation.
  * @author AI Architect
- * @version 2.0.0
+ * @version 2.0.1
  */
 
 // ===================================================================================
@@ -364,8 +364,90 @@ function populateDashboard() {
     `).join('');
   }
 
-  // Weather Widget, Fleet Summary, etc. (Implement similarly)
-  // ...
+  // Weather Widget
+  const weatherDisplay = document.getElementById('weatherDisplay');
+    if (weatherDisplay) {
+        const weather = applicationData.weather;
+        weatherDisplay.innerHTML = `
+      <div class="weather-main">
+        <div class="weather-icon"><i class="fas fa-cloud-sun"></i></div>
+        <div>
+          <div class="weather-temp">${weather.temperature}°F</div>
+          <div class="weather-condition">${weather.condition}</div>
+        </div>
+      </div>
+      <div class="weather-details">
+        <div class="weather-item"><span>Wind</span><span>${weather.windSpeed} mph ${weather.windDirection}</span></div>
+        <div class="weather-item"><span>Humidity</span><span>${weather.humidity}%</span></div>
+        <div class="weather-item"><span>Visibility</span><span>${weather.visibility} mi</span></div>
+        <div class="weather-item"><span>Flight Category</span><span class="status status--success">${weather.flightCategory}</span></div>
+      </div>
+    `;
+    }
+
+    // Fleet Summary
+    const fleetSummary = document.getElementById('fleetSummary');
+    if (fleetSummary) {
+        const statusCounts = applicationData.drones.reduce((acc, drone) => {
+            acc[drone.status] = (acc[drone.status] || 0) + 1;
+            return acc;
+        }, {});
+        fleetSummary.innerHTML = `
+      <div class="fleet-stat">
+        <div class="fleet-stat-number">${statusCounts['In Flight'] || 0}</div>
+        <div class="fleet-stat-label">Active</div>
+      </div>
+      <div class="fleet-stat">
+        <div class="fleet-stat-number">${statusCounts['Available'] || 0}</div>
+        <div class="fleet-stat-label">Available</div>
+      </div>
+      <div class="fleet-stat">
+        <div class="fleet-stat-number">${statusCounts['Maintenance'] || 0}</div>
+        <div class="fleet-stat-label">Maintenance</div>
+      </div>
+      <div class="fleet-stat">
+        <div class="fleet-stat-number">${statusCounts['Charging'] || 0}</div>
+        <div class="fleet-stat-label">Charging</div>
+      </div>
+    `;
+    }
+
+    // Recent Detections
+    const recentDetections = document.getElementById('recentDetections');
+    if (recentDetections) {
+        recentDetections.innerHTML = applicationData.detections.slice(0, 3).map(detection => `
+      <div class="detection-item ${detection.alert ? 'alert' : ''}">
+        <div class="detection-info">
+          <div class="detection-class">${detection.class}</div>
+          <div class="detection-meta">${detection.location} • ${detection.timestamp}</div>
+        </div>
+        <div class="detection-confidence">${(detection.confidence * 100).toFixed(0)}%</div>
+      </div>
+    `).join('');
+    }
+
+    // System Health
+    const systemHealth = document.getElementById('systemHealth');
+    if (systemHealth) {
+        const healthItems = [
+            { label: 'AI Agents', status: 'success' },
+            { label: 'Weather API', status: 'success' },
+            { label: 'Blockchain', status: 'success' },
+            { label: 'Communications', status: 'warning' }
+        ];
+        systemHealth.innerHTML = healthItems.map(item => `
+      <div class="health-indicator">
+        <div class="health-icon ${item.status}"></div>
+        <div class="health-label">${item.label}</div>
+      </div>
+    `).join('');
+    }
+
+    // Update active flight count
+    const activeFlightCount = document.getElementById('activeFlightCount');
+    if (activeFlightCount) {
+        activeFlightCount.textContent = `${applicationData.activeFlights.filter(f => f.status === 'In Flight').length} Active`;
+    }
 }
 
 /**
@@ -670,8 +752,48 @@ function updateBatteryLevels() {
  * Simulates the creation of a new AI detection event.
  */
 function addRandomDetection() {
-  // Logic to add a new detection and update UI...
+    const detectionTypes = ['Hot Spot', 'Person', 'Vehicle', 'Debris', 'Animal'];
+    const locations = ['Roof Section A', 'Roof Section B', 'Ground Level', 'Parking Area', 'Garden Area'];
+
+    const newDetection = {
+        id: `DET${String(Date.now()).slice(-3)}`,
+        timestamp: new Date().toLocaleTimeString(),
+        class: detectionTypes[Math.floor(Math.random() * detectionTypes.length)],
+        confidence: 0.7 + Math.random() * 0.3,
+        temperature: 60 + Math.random() * 100,
+        location: locations[Math.floor(Math.random() * locations.length)],
+        verified: Math.random() > 0.5,
+        alert: Math.random() > 0.7
+    };
+
+    applicationData.detections.unshift(newDetection);
+    if (applicationData.detections.length > 10) {
+        applicationData.detections.pop();
+    }
+
+    if (currentPage === 'dashboard') populateDashboard();
+    if (currentPage === 'ai-detection') populateAIDetection();
+
+    if (newDetection.alert) {
+        const notification = {
+            id: `NOT${String(Date.now()).slice(-3)}`,
+            type: 'Detection Alert',
+            message: `${newDetection.class} detected in ${newDetection.location}`,
+            priority: 'High',
+            timestamp: newDetection.timestamp
+        };
+        applicationData.notifications.unshift(notification);
+        populateNotifications();
+        
+        const notificationCount = document.querySelector('.notification-count');
+        if (notificationCount) {
+            notificationCount.textContent = applicationData.notifications.length;
+            notificationCount.style.animation = 'pulse 0.5s ease-in-out';
+            setTimeout(() => notificationCount.style.animation = '', 500);
+        }
+    }
 }
+
 
 // ===================================================================================
 //  UTILITY FUNCTIONS
