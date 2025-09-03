@@ -3,561 +3,426 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DI AERO - Drone Intelligence Platform</title>
+    <title>Crawfish Crossin' - Randol's Restaurant</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-left">
-            <button class="menu-toggle" id="menuToggle">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="logo">
-                <i class="fas fa-helicopter"></i>
-                <h1>DI AERO</h1>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen active">
+        <div class="loading-content">
+            <div class="logo-container">
+                <img src="https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/0015159d-3a05-4235-b400-4c909a05dc91.png" alt="Clawd the Crawfish" class="clawd-logo">
+                <h1>Crawfish Crossin'</h1>
+                <p>Randol's Restaurant</p>
             </div>
-        </div>
-        <div class="header-center">
-            <nav class="breadcrumb" id="breadcrumb">
-                <span>Dashboard</span>
-            </nav>
-        </div>
-        <div class="header-right">
-            <div class="theme-toggle">
-                <button id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
-            <div class="notifications">
-                <button class="notification-btn" id="notificationBtn">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-count">3</span>
-                </button>
-            </div>
-            <div class="user-menu">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%23626C71'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E" alt="User" class="user-avatar">
-                <span class="user-name">Sarah Johnson</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <nav class="sidebar-nav">
-            <ul class="nav-list">
-                <li class="nav-item">
-                    <a href="#dashboard" class="nav-link active" data-page="dashboard">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#flight-ops" class="nav-link" data-page="flight-ops">
-                        <i class="fas fa-plane"></i>
-                        <span>Flight Operations</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#drone-fleet" class="nav-link" data-page="drone-fleet">
-                        <i class="fas fa-helicopter"></i>
-                        <span>Drone Fleet</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#mission-planning" class="nav-link" data-page="mission-planning">
-                        <i class="fas fa-map"></i>
-                        <span>Mission Planning</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#ai-detection" class="nav-link" data-page="ai-detection">
-                        <i class="fas fa-eye"></i>
-                        <span>AI Detection</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#weather" class="nav-link" data-page="weather">
-                        <i class="fas fa-cloud-sun"></i>
-                        <span>Weather Center</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#agents" class="nav-link" data-page="agents">
-                        <i class="fas fa-robot"></i>
-                        <span>Agent Control</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#blockchain" class="nav-link" data-page="blockchain">
-                        <i class="fas fa-link"></i>
-                        <span>Chain of Custody</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#settings" class="nav-link" data-page="settings">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#reports" class="nav-link" data-page="reports">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Reports</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="main-content" id="mainContent">
-        <!-- Dashboard Page -->
-        <div class="page active" id="dashboard-page">
-            <div class="page-header">
-                <h2>Dashboard Overview</h2>
-                <div class="quick-actions">
-                    <button class="btn btn--primary">
-                        <i class="fas fa-plus"></i>
-                        Launch Mission
-                    </button>
-                    <button class="btn btn--outline">
-                        <i class="fas fa-stop"></i>
-                        Emergency Stop
-                    </button>
-                </div>
-            </div>
-
-            <div class="dashboard-grid">
-                <!-- Flight Status Cards -->
-                <div class="card flight-status-card">
-                    <div class="card-header">
-                        <h3>Active Flights</h3>
-                        <span class="status status--success" id="activeFlightCount">2 Active</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="flight-list" id="activeFlightsList">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Weather Widget -->
-                <div class="card weather-card">
-                    <div class="card-header">
-                        <h3>Weather Conditions</h3>
-                        <span class="status status--success">VFR</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="weather-display" id="weatherDisplay">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Fleet Status -->
-                <div class="card fleet-status-card">
-                    <div class="card-header">
-                        <h3>Fleet Status</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="fleet-summary" id="fleetSummary">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Detections -->
-                <div class="card detections-card">
-                    <div class="card-header">
-                        <h3>Recent AI Detections</h3>
-                        <button class="btn btn--sm btn--outline">View All</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="detection-list" id="recentDetections">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- System Health -->
-                <div class="card system-health-card">
-                    <div class="card-header">
-                        <h3>System Health</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="health-indicators" id="systemHealth">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Activity Chart -->
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <h3>Flight Activity (24h)</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="position: relative; height: 300px;">
-                            <canvas id="activityChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Flight Operations Page -->
-        <div class="page" id="flight-ops-page">
-            <div class="page-header">
-                <h2>Flight Operations</h2>
-                <div class="flight-controls">
-                    <button class="btn btn--primary">
-                        <i class="fas fa-home"></i>
-                        Return to Home
-                    </button>
-                    <button class="btn btn--warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Emergency Land
-                    </button>
-                </div>
-            </div>
-
-            <div class="flight-ops-grid">
-                <div class="card map-card">
-                    <div class="card-header">
-                        <h3>Live Flight Map</h3>
-                        <div class="map-controls">
-                            <button class="btn btn--sm btn--outline">Center View</button>
-                            <button class="btn btn--sm btn--outline">Follow Drone</button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="flight-map" id="flightMap">
-                            <img src="drone_architecture.png" alt="Flight Map" class="map-image">
-                            <div class="drone-markers">
-                                <div class="drone-marker active" style="top: 40%; left: 60%;">
-                                    <i class="fas fa-helicopter"></i>
-                                    <span class="drone-label">Mavic 3T-01</span>
-                                </div>
-                                <div class="drone-marker standby" style="top: 70%; left: 30%;">
-                                    <i class="fas fa-helicopter"></i>
-                                    <span class="drone-label">Mavic 3-02</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card telemetry-card">
-                    <div class="card-header">
-                        <h3>Live Telemetry</h3>
-                        <select class="form-control">
-                            <option>Mavic 3T-01</option>
-                            <option>Mavic 3-02</option>
-                        </select>
-                    </div>
-                    <div class="card-body">
-                        <div class="telemetry-data" id="telemetryData">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Drone Fleet Page -->
-        <div class="page" id="drone-fleet-page">
-            <div class="page-header">
-                <h2>Drone Fleet Management</h2>
-                <div class="fleet-actions">
-                    <button class="btn btn--primary">
-                        <i class="fas fa-plus"></i>
-                        Add Drone
-                    </button>
-                    <button class="btn btn--outline">
-                        <i class="fas fa-wrench"></i>
-                        Maintenance Schedule
-                    </button>
-                </div>
-            </div>
-
-            <div class="fleet-grid" id="fleetGrid">
-                <!-- Populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Mission Planning Page -->
-        <div class="page" id="mission-planning-page">
-            <div class="page-header">
-                <h2>Mission Planning</h2>
-                <div class="mission-actions">
-                    <button class="btn btn--primary">
-                        <i class="fas fa-save"></i>
-                        Save Mission
-                    </button>
-                    <button class="btn btn--outline">
-                        <i class="fas fa-play"></i>
-                        Execute Mission
-                    </button>
-                </div>
-            </div>
-
-            <div class="mission-planning-grid">
-                <div class="card mission-map-card">
-                    <div class="card-header">
-                        <h3>Mission Map</h3>
-                        <div class="map-tools">
-                            <button class="btn btn--sm btn--outline">Add Waypoint</button>
-                            <button class="btn btn--sm btn--outline">Draw Area</button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="mission-map">
-                            <div class="map-placeholder">
-                                <i class="fas fa-map-marked-alt"></i>
-                                <p>Mission Planning Map</p>
-                                <div class="waypoints">
-                                    <div class="waypoint" style="top: 30%; left: 40%;">1</div>
-                                    <div class="waypoint" style="top: 50%; left: 60%;">2</div>
-                                    <div class="waypoint" style="top: 70%; left: 50%;">3</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mission-params-card">
-                    <div class="card-header">
-                        <h3>Mission Parameters</h3>
-                    </div>
-                    <div class="card-body">
-                        <form class="mission-form">
-                            <div class="form-group">
-                                <label class="form-label">Mission Type</label>
-                                <select class="form-control">
-                                    <option>Thermal Inspection</option>
-                                    <option>Visual Survey</option>
-                                    <option>Search Pattern</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Altitude (ft)</label>
-                                <input type="number" class="form-control" value="120">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Speed (mph)</label>
-                                <input type="number" class="form-control" value="25">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Photo Overlap (%)</label>
-                                <input type="number" class="form-control" value="80">
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- AI Detection Page -->
-        <div class="page" id="ai-detection-page">
-            <div class="page-header">
-                <h2>AI Detection & Analysis</h2>
-                <div class="detection-filters">
-                    <select class="form-control">
-                        <option>All Detections</option>
-                        <option>Hot Spots</option>
-                        <option>People</option>
-                        <option>Vehicles</option>
-                    </select>
-                    <button class="btn btn--outline">Export Results</button>
-                </div>
-            </div>
-
-            <div class="detection-grid">
-                <div class="card thermal-view-card">
-                    <div class="card-header">
-                        <h3>Thermal Analysis</h3>
-                        <div class="thermal-controls">
-                            <button class="btn btn--sm btn--outline">Calibrate</button>
-                            <button class="btn btn--sm btn--outline">Set Threshold</button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="thermal-display">
-                            <div class="thermal-image">
-                                 <img src="04-15-32-170_radiometric.jpg" alt="Thermal Analysis" class="thermal-image-display">
-                                <div class="thermal-overlay">
-                                    <div class="hot-spot" style="top: 10%; left: 52%;">
-                                        <span class="temp-reading">185°F</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="thermal-scale">
-                                <div class="scale-bar"></div>
-                                <div class="scale-labels">
-                                    <span>50°F</span>
-                                    <span>250°F</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card detection-feed-card">
-                    <div class="card-header">
-                        <h3>Detection Feed</h3>
-                         <img src="Aerial_Thermal_Imaging_roof.jpg" alt="Detection Feed" class="detection-feed-image">
-                        <span class="status status--success">Real-time</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="detection-feed" id="detectionFeed">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Weather Center Page -->
-        <div class="page" id="weather-page">
-            <div class="page-header">
-                <h2>Weather Center</h2>
-                <div class="weather-actions">
-                    <button class="btn btn--outline">
-                        <i class="fas fa-sync"></i>
-                        Refresh Data
-                    </button>
-                    <button class="btn btn--outline">View Forecast</button>
-                </div>
-            </div>
-
-            <div class="weather-grid">
-                <div class="card current-weather-card">
-                    <div class="card-header">
-                        <h3>Current Conditions</h3>
-                        <span class="location">Lafayette, Louisiana</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="current-weather" id="currentWeather">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card flight-conditions-card">
-                    <div class="card-header">
-                        <h3>Flight Conditions</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="flight-conditions" id="flightConditions">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Agent Control Page -->
-        <div class="page" id="agents-page">
-            <div class="page-header">
-                <h2>AI Agent Control</h2>
-                <div class="agent-actions">
-                    <button class="btn btn--primary">Deploy Agent</button>
-                    <button class="btn btn--outline">System Diagnostics</button>
-                </div>
-            </div>
-
-            <div class="agents-grid" id="agentsGrid">
-                <!-- Populated by JavaScript -->
-            </div>
-        </div>
-
-        <!-- Chain of Custody Page -->
-        <div class="page" id="blockchain-page">
-            <div class="page-header">
-                <h2>Chain of Custody</h2>
-                <div class="blockchain-actions">
-                    <button class="btn btn--primary">Verify Record</button>
-                    <button class="btn btn--outline">Export Audit</button>
-                </div>
-            </div>
-
-            <div class="blockchain-grid">
-                <div class="card blockchain-feed-card">
-                    <div class="card-header">
-                        <h3>Blockchain Transactions</h3>
-                        <span class="status status--success">All Verified</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="blockchain-feed" id="blockchainFeed">
-                            <!-- Populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Page -->
-        <div class="page" id="settings-page">
-            <div class="page-header">
-                <h2>System Settings</h2>
-            </div>
-            <div class="settings-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>System Configuration</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>Settings panel will be implemented here</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Reports Page -->
-        <div class="page" id="reports-page">
-            <div class="page-header">
-                <h2>Reports & Analytics</h2>
-            </div>
-            <div class="reports-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Performance Reports</h3>
-                    </div>
-                    <div class="card-body">
-                        <p>Reports dashboard will be implemented here</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Notification Panel -->
-    <div class="notification-panel" id="notificationPanel">
-        <div class="panel-header">
-            <h3>Notifications</h3>
-            <button class="close-panel" id="closeNotifications">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="panel-body">
-            <div class="notification-list" id="notificationList">
-                <!-- Populated by JavaScript -->
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner">
-            <i class="fas fa-helicopter fa-spin"></i>
-            <p>Loading DI AERO...</p>
+    <!-- Main Menu Screen -->
+    <div id="main-menu" class="screen">
+        <div class="menu-header">
+            <div class="logo-container">
+                <img src="https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/0015159d-3a05-4235-b400-4c909a05dc91.png" alt="Clawd" class="clawd-character">
+                <h1>Crawfish Crossin'</h1>
+            </div>
+            
+            <div class="player-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">💎</span>
+                    <span id="loyalty-points">85</span> points
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🎮</span>
+                    <span id="daily-plays">3</span>/5 plays today
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🔥</span>
+                    <span id="streak-counter">1</span> day streak
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-buttons">
+            <button class="btn btn--primary btn--lg btn--full-width neumorphic" id="play-btn">
+                <span class="btn-icon">🎮</span>
+                Play Game
+            </button>
+            <button class="btn btn--secondary btn--lg btn--full-width neumorphic" id="rewards-btn">
+                <span class="btn-icon">🏆</span>
+                Rewards Shop
+            </button>
+            <button class="btn btn--secondary btn--lg btn--full-width neumorphic" id="leaderboard-btn">
+                <span class="btn-icon">📊</span>
+                Leaderboard
+            </button>
+            <button class="btn btn--secondary btn--lg btn--full-width neumorphic" id="achievements-btn">
+                <span class="btn-icon">🏅</span>
+                Achievements
+            </button>
+            <button class="btn btn--outline btn--lg btn--full-width neumorphic" id="settings-btn">
+                <span class="btn-icon">⚙️</span>
+                Settings
+            </button>
+        </div>
+
+        <div class="daily-bonus-notification neumorphic" id="daily-bonus">
+            <span class="bonus-icon">🎁</span>
+            <div class="bonus-text">
+                <strong>Daily Bonus Available!</strong>
+                <p>Log in tomorrow for streak bonus</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-ui">
+            <div class="game-header">
+                <button class="btn btn--sm neumorphic" id="pause-btn">⏸️</button>
+                <div class="score-display">
+                    <span class="score-label">Score:</span>
+                    <span id="current-score">0</span>
+                </div>
+                <div class="points-display">
+                    <span class="points-icon">💎</span>
+                    <span id="game-points">85</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-container">
+            <canvas id="game-canvas" width="375" height="600"></canvas>
+        </div>
+
+        <div class="game-controls">
+            <div class="control-instructions">
+                <p>Tap to move forward • Swipe left/right to dodge</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over" class="screen">
+        <div class="game-over-content">
+            <div class="character-reaction">
+                <img src="https://user-gen-media-assets.s3.amazonaws.com/gpt4o_images/0015159d-3a05-4235-b400-4c909a05dc91.png" alt="Clawd" class="clawd-reaction">
+                <h2 id="game-over-title">Game Over!</h2>
+            </div>
+
+            <div class="score-summary neumorphic">
+                <div class="final-score">
+                    <h3>Final Score</h3>
+                    <span id="final-score-value">0</span>
+                </div>
+                <div class="points-earned">
+                    <span class="points-icon">💎</span>
+                    <span id="points-earned">+5</span> points earned
+                </div>
+                <div class="best-score">
+                    <span>Best: <span id="best-score">34</span></span>
+                </div>
+            </div>
+
+            <div class="game-over-buttons">
+                <button class="btn btn--primary btn--lg btn--full-width neumorphic" id="play-again-btn">
+                    Play Again
+                </button>
+                <button class="btn btn--secondary btn--lg btn--full-width neumorphic" id="home-btn">
+                    Back to Menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rewards Shop Screen -->
+    <div id="rewards-screen" class="screen">
+        <div class="screen-header">
+            <button class="btn btn--sm neumorphic" id="rewards-back-btn">← Back</button>
+            <h2>Rewards Shop</h2>
+            <div class="points-balance">
+                <span class="points-icon">💎</span>
+                <span id="shop-points">85</span>
+            </div>
+        </div>
+
+        <div class="rewards-list">
+            <div class="reward-item neumorphic" data-cost="50" data-id="1">
+                <div class="reward-info">
+                    <h3>Appetizer Discount</h3>
+                    <p>10% off any appetizer</p>
+                </div>
+                <div class="reward-cost">
+                    <span class="points-icon">💎</span>
+                    <span>50</span>
+                </div>
+                <button class="btn btn--primary btn--sm">Buy</button>
+            </div>
+
+            <div class="reward-item neumorphic" data-cost="100" data-id="2">
+                <div class="reward-info">
+                    <h3>Priority Seating</h3>
+                    <p>Skip the wait line</p>
+                </div>
+                <div class="reward-cost">
+                    <span class="points-icon">💎</span>
+                    <span>100</span>
+                </div>
+                <button class="btn btn--primary btn--sm">Buy</button>
+            </div>
+
+            <div class="reward-item neumorphic" data-cost="75" data-id="3">
+                <div class="reward-info">
+                    <h3>Mardi Gras Clawd Skin</h3>
+                    <p>Purple, gold & green costume</p>
+                </div>
+                <div class="reward-cost">
+                    <span class="points-icon">💎</span>
+                    <span>75</span>
+                </div>
+                <button class="btn btn--primary btn--sm">Buy</button>
+            </div>
+
+            <div class="reward-item neumorphic" data-cost="90" data-id="4">
+                <div class="reward-info">
+                    <h3>Boil Master Skin</h3>
+                    <p>Chef hat and apron</p>
+                </div>
+                <div class="reward-cost">
+                    <span class="points-icon">💎</span>
+                    <span>90</span>
+                </div>
+                <button class="btn btn--primary btn--sm">Buy</button>
+            </div>
+
+            <div class="reward-item neumorphic" data-cost="200" data-id="5">
+                <div class="reward-info">
+                    <h3>Free Crawfish Pound</h3>
+                    <p>1 lb boiled crawfish</p>
+                </div>
+                <div class="reward-cost">
+                    <span class="points-icon">💎</span>
+                    <span>200</span>
+                </div>
+                <button class="btn btn--primary btn--sm">Buy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Screen -->
+    <div id="leaderboard-screen" class="screen">
+        <div class="screen-header">
+            <button class="btn btn--sm neumorphic" id="leaderboard-back-btn">← Back</button>
+            <h2>Leaderboard</h2>
+            <span class="header-icon">🏆</span>
+        </div>
+
+        <div class="leaderboard-list">
+            <div class="leaderboard-item neumorphic current-player">
+                <div class="rank">6</div>
+                <div class="player-info">
+                    <span class="player-name">You</span>
+                    <span class="player-score">34</span>
+                </div>
+            </div>
+
+            <div class="leaderboard-item neumorphic">
+                <div class="rank crown">1</div>
+                <div class="player-info">
+                    <span class="player-name">CajunKing</span>
+                    <span class="player-score">127</span>
+                </div>
+            </div>
+
+            <div class="leaderboard-item neumorphic">
+                <div class="rank">2</div>
+                <div class="player-info">
+                    <span class="player-name">BayouBoss</span>
+                    <span class="player-score">104</span>
+                </div>
+            </div>
+
+            <div class="leaderboard-item neumorphic">
+                <div class="rank">3</div>
+                <div class="player-info">
+                    <span class="player-name">CrawdadQueen</span>
+                    <span class="player-score">89</span>
+                </div>
+            </div>
+
+            <div class="leaderboard-item neumorphic">
+                <div class="rank">4</div>
+                <div class="player-info">
+                    <span class="player-name">SpiceGuru</span>
+                    <span class="player-score">76</span>
+                </div>
+            </div>
+
+            <div class="leaderboard-item neumorphic">
+                <div class="rank">5</div>
+                <div class="player-info">
+                    <span class="player-name">LafiLover</span>
+                    <span class="player-score">68</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievements Screen -->
+    <div id="achievements-screen" class="screen">
+        <div class="screen-header">
+            <button class="btn btn--sm neumorphic" id="achievements-back-btn">← Back</button>
+            <h2>Achievements</h2>
+            <span class="header-icon">🏅</span>
+        </div>
+
+        <div class="achievements-list">
+            <div class="achievement-item neumorphic unlocked">
+                <div class="achievement-icon">✅</div>
+                <div class="achievement-info">
+                    <h3>First Steps</h3>
+                    <p>Complete your first level</p>
+                    <div class="achievement-points">+5 points</div>
+                </div>
+            </div>
+
+            <div class="achievement-item neumorphic locked">
+                <div class="achievement-icon">🔒</div>
+                <div class="achievement-info">
+                    <h3>Bayou Navigator</h3>
+                    <p>Cross 10 bayou terrains</p>
+                    <div class="achievement-points">+15 points</div>
+                </div>
+            </div>
+
+            <div class="achievement-item neumorphic locked">
+                <div class="achievement-icon">🔒</div>
+                <div class="achievement-info">
+                    <h3>Speed Demon</h3>
+                    <p>Score 50+ in one game</p>
+                    <div class="achievement-points">+25 points</div>
+                </div>
+            </div>
+
+            <div class="achievement-item neumorphic locked">
+                <div class="achievement-icon">🔒</div>
+                <div class="achievement-info">
+                    <h3>Loyalty Master</h3>
+                    <p>3-day play streak</p>
+                    <div class="achievement-points">+30 points</div>
+                </div>
+            </div>
+
+            <div class="achievement-item neumorphic locked">
+                <div class="achievement-icon">🔒</div>
+                <div class="achievement-info">
+                    <h3>Treasure Hunter</h3>
+                    <p>Open 5 treasure chests</p>
+                    <div class="achievement-points">+40 points</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+        <div class="screen-header">
+            <button class="btn btn--sm neumorphic" id="settings-back-btn">← Back</button>
+            <h2>Settings</h2>
+            <span class="header-icon">⚙️</span>
+        </div>
+
+        <div class="settings-list">
+            <div class="setting-item neumorphic">
+                <div class="setting-info">
+                    <h3>Background Music</h3>
+                    <p>Cajun fiddle soundtrack</p>
+                </div>
+                <div class="setting-toggle">
+                    <input type="checkbox" id="music-toggle" checked>
+                    <label for="music-toggle" class="toggle-switch"></label>
+                </div>
+            </div>
+
+            <div class="setting-item neumorphic">
+                <div class="setting-info">
+                    <h3>Sound Effects</h3>
+                    <p>Game sounds and character voices</p>
+                </div>
+                <div class="setting-toggle">
+                    <input type="checkbox" id="sfx-toggle" checked>
+                    <label for="sfx-toggle" class="toggle-switch"></label>
+                </div>
+            </div>
+
+            <div class="setting-item neumorphic">
+                <div class="setting-info">
+                    <h3>Haptic Feedback</h3>
+                    <p>Vibration on interactions</p>
+                </div>
+                <div class="setting-toggle">
+                    <input type="checkbox" id="haptic-toggle" checked>
+                    <label for="haptic-toggle" class="toggle-switch"></label>
+                </div>
+            </div>
+
+            <div class="setting-item neumorphic">
+                <div class="setting-info">
+                    <h3>Control Style</h3>
+                    <p>Choose your preferred controls</p>
+                </div>
+                <select class="form-control" id="controls-select">
+                    <option value="tap">Tap Controls</option>
+                    <option value="swipe">Swipe Controls</option>
+                    <option value="buttons">Button Controls</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-actions">
+            <button class="btn btn--outline btn--full-width neumorphic" id="receipt-scan-btn">
+                📱 Scan Receipt for Bonus Plays
+            </button>
+        </div>
+    </div>
+
+    <!-- Receipt Scan Modal -->
+    <div id="receipt-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content neumorphic">
+            <div class="modal-header">
+                <h3>Scan Receipt</h3>
+                <button class="modal-close" id="receipt-close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="receipt-scanner">
+                    <div class="camera-frame">
+                        <div class="scan-line"></div>
+                        <p>Position receipt within frame</p>
+                    </div>
+                    <p class="receipt-instructions">Scan a Randol's receipt of $10+ to earn bonus plays!</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn--secondary btn--full-width" id="receipt-simulate-btn">
+                    Simulate Scan (Demo)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="notification-toast hidden">
+        <div class="toast-content">
+            <span class="toast-icon">🎉</span>
+            <span class="toast-message">Achievement unlocked!</span>
         </div>
     </div>
 
     <script src="app.js"></script>
 </body>
 </html>
-
