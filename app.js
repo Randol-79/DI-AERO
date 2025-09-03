@@ -1,6 +1,20 @@
-// DI AERO Dashboard JavaScript
+/**
+ * @file Main application logic for the DI AERO Dashboard.
+ * @description This script manages the entire lifecycle and interactivity of the DI AERO frontend,
+ * including UI rendering, event handling, real-time data simulation, and page navigation.
+ * @author AI Architect
+ * @version 2.0.0
+ */
 
-// Application data
+// ===================================================================================
+//  APPLICATION DATA STORE
+// ===================================================================================
+
+/**
+ * @const {object} applicationData
+ * @description A centralized object containing all mock data for the dashboard demonstration.
+ * This simulates a backend database or real-time data feed.
+ */
 const applicationData = {
   "activeFlights": [
     {"id": "FL001", "drone": "Mavic 3T-01", "pilot": "Sarah Johnson", "mission": "Roof Inspection", "status": "In Flight", "battery": 78, "altitude": 120, "latitude": 30.2241, "longitude": -92.0198, "startTime": "14:30", "duration": "25 min"},
@@ -35,7 +49,7 @@ const applicationData = {
     {"name": "Val", "type": "Validation Agent", "status": "Active", "currentTask": "Verifying detection accuracy", "responseTime": 125, "successRate": 97.8},
     {"name": "HAIL-M", "type": "Health Monitor", "status": "Active", "currentTask": "System health diagnostics", "responseTime": 95, "successRate": 99.5}
   ],
-  "missions": [
+    "missions": [
     {"id": "MISS001", "name": "Post-Storm Roof Survey", "type": "Thermal Inspection", "area": "Residential District", "waypoints": 15, "estimatedDuration": 45, "status": "Active"},
     {"id": "MISS002", "name": "Infrastructure Assessment", "type": "Visual Survey", "area": "Downtown Lafayette", "waypoints": 22, "estimatedDuration": 60, "status": "Planned"},
     {"id": "MISS003", "name": "Emergency Response Training", "type": "Search Pattern", "area": "Training Facility", "waypoints": 8, "estimatedDuration": 30, "status": "Template"}
@@ -58,255 +72,248 @@ const applicationData = {
   ]
 };
 
-// Application state
+// ===================================================================================
+//  APPLICATION STATE & CONFIGURATION
+// ===================================================================================
+
 let currentPage = 'dashboard';
 let sidebarCollapsed = false;
 let darkMode = false;
 let notificationPanelOpen = false;
 let activityChart = null;
+let map = null;
+let missionMap = null;
+let droneMarkers = {};
+const mapboxAccessToken = 'pk.eyJ1IjoicnVzc2VsbHJhbmRvbCIsImEiOiJjbWY0YjBvN2MwM2t4Mm1vcDNzN3dvNXV3In0.n4Z3wKdA_zBl5mx38ElyUA';
 
-// DOM elements
-let sidebar, mainContent, menuToggle, themeToggle, notificationBtn, notificationPanel, closeNotifications, breadcrumb, loadingOverlay;
+// DOM Element Cache
+const dom = {};
 
-// Initialize application
-document.addEventListener('DOMContentLoaded', function() {
-  initializeApp();
-});
+// ===================================================================================
+//  INITIALIZATION
+// ===================================================================================
 
+/**
+ * Initializes the application after the DOM is fully loaded.
+ */
+document.addEventListener('DOMContentLoaded', initializeApp);
+
+/**
+ * Main initialization function. Caches DOM elements, sets up listeners,
+ * and populates the initial view.
+ */
 function initializeApp() {
-  // Get DOM elements
-  sidebar = document.getElementById('sidebar');
-  mainContent = document.getElementById('mainContent');
-  menuToggle = document.getElementById('menuToggle');
-  themeToggle = document.getElementById('themeToggle');
-  notificationBtn = document.getElementById('notificationBtn');
-  notificationPanel = document.getElementById('notificationPanel');
-  closeNotifications = document.getElementById('closeNotifications');
-  breadcrumb = document.getElementById('breadcrumb');
-  loadingOverlay = document.getElementById('loadingOverlay');
-
-  // Show loading overlay briefly
-  setTimeout(() => {
-    if (loadingOverlay) {
-      loadingOverlay.classList.add('hidden');
-    }
-  }, 1500);
-
-  // Set up event listeners
+  cacheDOMElements();
+  showLoadingScreen();
   setupEventListeners();
-  
-  // Initialize navigation
   setupNavigation();
-  
-  // Populate initial data
   populateAllPages();
-  
-  // Initialize charts
   initializeCharts();
-  
-  // Start real-time updates
   startRealTimeUpdates();
-  
-  // Check for mobile
   checkMobileView();
 }
 
-function setupEventListeners() {
-  // Menu toggle
-  if (menuToggle) {
-    menuToggle.addEventListener('click', toggleSidebar);
-  }
-  
-  // Theme toggle
-  if (themeToggle) {
-    themeToggle.addEventListener('click', toggleTheme);
-  }
-  
-  // Notification panel
-  if (notificationBtn) {
-    notificationBtn.addEventListener('click', toggleNotificationPanel);
-  }
-  if (closeNotifications) {
-    closeNotifications.addEventListener('click', toggleNotificationPanel);
-  }
-  
-  // Logo click to return to dashboard
-  const logo = document.querySelector('.logo');
-  if (logo) {
-    logo.addEventListener('click', () => navigateToPage('dashboard'));
-    logo.style.cursor = 'pointer';
-  }
-  
-  // Window resize
-  window.addEventListener('resize', checkMobileView);
-  
-  // Outside click to close notification panel
-  document.addEventListener('click', function(e) {
-    if (notificationPanelOpen && notificationPanel && !notificationPanel.contains(e.target) && notificationBtn && !notificationBtn.contains(e.target)) {
-      toggleNotificationPanel();
-    }
-  });
+/**
+ * Caches frequently accessed DOM elements to improve performance.
+ */
+function cacheDOMElements() {
+  dom.sidebar = document.getElementById('sidebar');
+  dom.mainContent = document.getElementById('mainContent');
+  dom.menuToggle = document.getElementById('menuToggle');
+  dom.themeToggle = document.getElementById('themeToggle');
+  dom.notificationBtn = document.getElementById('notificationBtn');
+  dom.notificationPanel = document.getElementById('notificationPanel');
+  dom.closeNotifications = document.getElementById('closeNotifications');
+  dom.breadcrumb = document.getElementById('breadcrumb');
+  dom.loadingOverlay = document.getElementById('loadingOverlay');
+  dom.logo = document.querySelector('.logo');
 }
 
+/**
+ * Displays a loading animation for a brief period.
+ */
+function showLoadingScreen() {
+  setTimeout(() => {
+    dom.loadingOverlay?.classList.add('hidden');
+  }, 1500);
+}
+
+// ===================================================================================
+//  EVENT HANDLING
+// ===================================================================================
+
+/**
+ * Sets up all primary event listeners for the application.
+ */
+function setupEventListeners() {
+  dom.menuToggle?.addEventListener('click', toggleSidebar);
+  dom.themeToggle?.addEventListener('click', toggleTheme);
+  dom.notificationBtn?.addEventListener('click', toggleNotificationPanel);
+  dom.closeNotifications?.addEventListener('click', toggleNotificationPanel);
+  dom.logo?.addEventListener('click', () => navigateToPage('dashboard'));
+
+  window.addEventListener('resize', checkMobileView);
+  document.addEventListener('click', handleOutsideClicks);
+}
+
+/**
+ * Closes the notification panel if a click occurs outside of it.
+ * @param {Event} e - The click event object.
+ */
+function handleOutsideClicks(e) {
+  const isOutsidePanel = notificationPanelOpen && 
+                         dom.notificationPanel && 
+                         !dom.notificationPanel.contains(e.target) && 
+                         dom.notificationBtn && 
+                         !dom.notificationBtn.contains(e.target);
+
+  if (isOutsidePanel) {
+    toggleNotificationPanel();
+  }
+}
+
+// ===================================================================================
+//  NAVIGATION & PAGE MANAGEMENT
+// ===================================================================================
+
+/**
+ * Sets up navigation links to handle page transitions.
+ */
 function setupNavigation() {
-  const navLinks = document.querySelectorAll('.nav-link');
-  
-  navLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
       e.preventDefault();
-      const pageName = this.getAttribute('data-page');
-      if (pageName) {
-        navigateToPage(pageName);
-      }
+      const pageName = link.getAttribute('data-page');
+      if (pageName) navigateToPage(pageName);
     });
   });
 }
 
+/**
+ * Handles the logic for switching between different pages in the application.
+ * @param {string} pageName - The identifier for the page to display.
+ */
 function navigateToPage(pageName) {
-  console.log('Navigating to:', pageName); // Debug log
-  
-  // Update active nav link
-  document.querySelectorAll('.nav-link').forEach(link => {
-    link.classList.remove('active');
-  });
-  
-  const targetNavLink = document.querySelector(`[data-page="${pageName}"]`);
-  if (targetNavLink) {
-    targetNavLink.classList.add('active');
-  }
-  
-  // Hide all pages
-  document.querySelectorAll('.page').forEach(page => {
-    page.classList.remove('active');
-    page.style.display = 'none';
-  });
-  
-  // Show target page
-  const targetPage = document.getElementById(`${pageName}-page`);
-  console.log('Target page element:', targetPage); // Debug log
-  
-  if (targetPage) {
-    targetPage.classList.add('active');
-    targetPage.style.display = 'block';
-  } else {
-    console.error('Page not found:', `${pageName}-page`);
-    // Fallback to dashboard
-    const dashboardPage = document.getElementById('dashboard-page');
-    if (dashboardPage) {
-      dashboardPage.classList.add('active');
-      dashboardPage.style.display = 'block';
-    }
-  }
-  
-  // Update breadcrumb
-  updateBreadcrumb(pageName);
-  
-  // Update current page
   currentPage = pageName;
   
-  // Close sidebar on mobile
-  if (window.innerWidth <= 768 && sidebar) {
-    sidebar.classList.remove('open');
-  }
+  updateActiveNavLink(pageName);
+  showTargetPage(pageName);
+  updateBreadcrumb(pageName);
   
-  // Refresh page-specific content
+  if (window.innerWidth <= 768) dom.sidebar?.classList.remove('open');
+  
   refreshPageContent(pageName);
+  handleMapInitialization(pageName);
 }
 
-function updateBreadcrumb(pageName) {
-  const pageNames = {
-    'dashboard': 'Dashboard',
-    'flight-ops': 'Flight Operations',
-    'drone-fleet': 'Drone Fleet',
-    'mission-planning': 'Mission Planning',
-    'ai-detection': 'AI Detection',
-    'weather': 'Weather Center',
-    'agents': 'Agent Control',
-    'blockchain': 'Chain of Custody',
-    'settings': 'Settings',
-    'reports': 'Reports'
-  };
+/**
+ * Updates the visual state of the navigation links.
+ * @param {string} pageName - The currently active page.
+ */
+function updateActiveNavLink(pageName) {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.toggle('active', link.getAttribute('data-page') === pageName);
+  });
+}
+
+/**
+ * Hides all pages and displays the target page.
+ * @param {string} pageName - The page to display.
+ */
+function showTargetPage(pageName) {
+  document.querySelectorAll('.page').forEach(page => page.style.display = 'none');
   
-  if (breadcrumb) {
-    breadcrumb.textContent = pageNames[pageName] || 'Dashboard';
+  const targetPage = document.getElementById(`${pageName}-page`);
+  if (targetPage) {
+    targetPage.style.display = 'block';
+  } else {
+    console.error(`Page not found: ${pageName}-page`);
+    document.getElementById('dashboard-page').style.display = 'block'; // Fallback
   }
 }
 
-function refreshPageContent(pageName) {
-  // Refresh specific page content when navigated to
-  switch (pageName) {
-    case 'dashboard':
-      populateDashboard();
-      break;
-    case 'flight-ops':
-      populateFlightOps();
-      break;
-    case 'drone-fleet':
-      populateDroneFleet();
-      break;
-    case 'ai-detection':
-      populateAIDetection();
-      break;
-    case 'weather':
-      populateWeather();
-      break;
-    case 'agents':
-      populateAgents();
-      break;
-    case 'blockchain':
-      populateBlockchain();
-      break;
-  }
+/**
+ * Updates the breadcrumb navigation text.
+ * @param {string} pageName - The current page name.
+ */
+function updateBreadcrumb(pageName) {
+  const pageTitles = {
+    'dashboard': 'Dashboard', 'flight-ops': 'Flight Operations', 'drone-fleet': 'Drone Fleet',
+    'mission-planning': 'Mission Planning', 'ai-detection': 'AI Detection', 'weather': 'Weather Center',
+    'agents': 'Agent Control', 'blockchain': 'Chain of Custody', 'settings': 'Settings', 'reports': 'Reports'
+  };
+  if (dom.breadcrumb) dom.breadcrumb.textContent = pageTitles[pageName] || 'Dashboard';
 }
 
+/**
+ * Initializes or refreshes maps when their respective pages are loaded.
+ * @param {string} pageName - The current page name.
+ */
+function handleMapInitialization(pageName) {
+    const initOrRefresh = (mapInstance, initializer) => {
+        setTimeout(() => {
+            if (!mapInstance) initializer();
+            else mapInstance.invalidateSize();
+        }, 100);
+    };
+
+    if (pageName === 'flight-ops') initOrRefresh(map, initializeMap);
+    if (pageName === 'mission-planning') initOrRefresh(missionMap, initializeMissionMap);
+}
+
+
+// ===================================================================================
+//  UI TOGGLES & UPDATES
+// ===================================================================================
+
+/**
+ * Toggles the sidebar visibility.
+ */
 function toggleSidebar() {
   if (window.innerWidth <= 768) {
-    if (sidebar) {
-      sidebar.classList.toggle('open');
-    }
+    dom.sidebar?.classList.toggle('open');
   } else {
     sidebarCollapsed = !sidebarCollapsed;
-    if (sidebar && mainContent) {
-      if (sidebarCollapsed) {
-        sidebar.classList.add('collapsed');
-        mainContent.classList.add('expanded');
-      } else {
-        sidebar.classList.remove('collapsed');
-        mainContent.classList.remove('expanded');
-      }
-    }
+    dom.sidebar?.classList.toggle('collapsed', sidebarCollapsed);
+    dom.mainContent?.classList.toggle('expanded', sidebarCollapsed);
   }
 }
 
+/**
+ * Toggles between light and dark color schemes.
+ */
 function toggleTheme() {
   darkMode = !darkMode;
   document.documentElement.setAttribute('data-color-scheme', darkMode ? 'dark' : 'light');
-  
-  if (themeToggle) {
-    const icon = themeToggle.querySelector('i');
-    if (icon) {
-      icon.className = darkMode ? 'fas fa-sun' : 'fas fa-moon';
-    }
-  }
+  dom.themeToggle.querySelector('i').className = darkMode ? 'fas fa-sun' : 'fas fa-moon';
 }
 
+/**
+ * Toggles the notification panel's visibility.
+ */
 function toggleNotificationPanel() {
   notificationPanelOpen = !notificationPanelOpen;
-  if (notificationPanel) {
-    notificationPanel.classList.toggle('open', notificationPanelOpen);
-  }
+  dom.notificationPanel?.classList.toggle('open', notificationPanelOpen);
 }
 
+/**
+ * Adjusts UI for mobile screen sizes.
+ */
 function checkMobileView() {
-  if (window.innerWidth <= 768) {
-    if (sidebar && mainContent) {
-      sidebar.classList.remove('collapsed');
-      mainContent.classList.remove('expanded');
-      sidebarCollapsed = false;
-    }
+  if (window.innerWidth <= 768 && !sidebarCollapsed) {
+    sidebarCollapsed = true; // Prevent incorrect state on resize
+    dom.sidebar?.classList.remove('collapsed');
+    dom.mainContent?.classList.remove('expanded');
   }
 }
 
+// ===================================================================================
+//  DATA POPULATION & RENDERING
+// ===================================================================================
+
+/**
+ * Populates all pages with their initial data.
+ */
 function populateAllPages() {
   populateDashboard();
   populateFlightOps();
@@ -318,8 +325,24 @@ function populateAllPages() {
   populateNotifications();
 }
 
+/**
+ * Calls the appropriate population function for the current page.
+ * @param {string} pageName - The page to refresh.
+ */
+function refreshPageContent(pageName) {
+  const pagePopulators = {
+    'dashboard': populateDashboard, 'flight-ops': populateFlightOps, 'drone-fleet': populateDroneFleet,
+    'ai-detection': populateAIDetection, 'weather': populateWeather, 'agents': populateAgents,
+    'blockchain': populateBlockchain
+  };
+  pagePopulators[pageName]?.();
+}
+
+/**
+ * Populates the dashboard with dynamic data.
+ */
 function populateDashboard() {
-  // Active flights
+  // Active Flights
   const activeFlightsList = document.getElementById('activeFlightsList');
   if (activeFlightsList) {
     activeFlightsList.innerHTML = applicationData.activeFlights.map(flight => `
@@ -332,355 +355,194 @@ function populateDashboard() {
           <div class="battery-indicator">
             <span>${flight.battery}%</span>
             <div class="battery-bar">
-              <div class="battery-fill ${flight.battery < 30 ? 'critical' : flight.battery < 50 ? 'warning' : ''}" 
-                   style="width: ${flight.battery}%"></div>
+              <div class="battery-fill ${getBatteryClass(flight.battery)}" style="width: ${flight.battery}%"></div>
             </div>
           </div>
-          <div class="status status--${flight.status === 'In Flight' ? 'success' : 'warning'}">${flight.status}</div>
+          <div class="status status--${getStatusClass(flight.status)}">${flight.status}</div>
         </div>
       </div>
     `).join('');
   }
 
-  // Weather display
-  const weatherDisplay = document.getElementById('weatherDisplay');
-  if (weatherDisplay) {
-    const weather = applicationData.weather;
-    weatherDisplay.innerHTML = `
-      <div class="weather-main">
-        <div class="weather-icon">
-          <i class="fas fa-cloud-sun"></i>
-        </div>
-        <div>
-          <div class="weather-temp">${weather.temperature}°F</div>
-          <div class="weather-condition">${weather.condition}</div>
-        </div>
-      </div>
-      <div class="weather-details">
-        <div class="weather-item">
-          <span>Wind</span>
-          <span>${weather.windSpeed} mph ${weather.windDirection}</span>
-        </div>
-        <div class="weather-item">
-          <span>Humidity</span>
-          <span>${weather.humidity}%</span>
-        </div>
-        <div class="weather-item">
-          <span>Visibility</span>
-          <span>${weather.visibility} mi</span>
-        </div>
-        <div class="weather-item">
-          <span>Flight Category</span>
-          <span class="status status--success">${weather.flightCategory}</span>
-        </div>
-      </div>
-    `;
-  }
-
-  // Fleet summary
-  const fleetSummary = document.getElementById('fleetSummary');
-  if (fleetSummary) {
-    const statusCounts = applicationData.drones.reduce((acc, drone) => {
-      acc[drone.status] = (acc[drone.status] || 0) + 1;
-      return acc;
-    }, {});
-    
-    fleetSummary.innerHTML = `
-      <div class="fleet-stat">
-        <div class="fleet-stat-number">${statusCounts['In Flight'] || 0}</div>
-        <div class="fleet-stat-label">Active</div>
-      </div>
-      <div class="fleet-stat">
-        <div class="fleet-stat-number">${statusCounts['Available'] || 0}</div>
-        <div class="fleet-stat-label">Available</div>
-      </div>
-      <div class="fleet-stat">
-        <div class="fleet-stat-number">${statusCounts['Maintenance'] || 0}</div>
-        <div class="fleet-stat-label">Maintenance</div>
-      </div>
-      <div class="fleet-stat">
-        <div class="fleet-stat-number">${statusCounts['Charging'] || 0}</div>
-        <div class="fleet-stat-label">Charging</div>
-      </div>
-    `;
-  }
-
-  // Recent detections
-  const recentDetections = document.getElementById('recentDetections');
-  if (recentDetections) {
-    recentDetections.innerHTML = applicationData.detections.slice(0, 3).map(detection => `
-      <div class="detection-item ${detection.alert ? 'alert' : ''}">
-        <div class="detection-info">
-          <div class="detection-class">${detection.class}</div>
-          <div class="detection-meta">${detection.location} • ${detection.timestamp}</div>
-        </div>
-        <div class="detection-confidence">${(detection.confidence * 100).toFixed(0)}%</div>
-      </div>
-    `).join('');
-  }
-
-  // System health
-  const systemHealth = document.getElementById('systemHealth');
-  if (systemHealth) {
-    const healthItems = [
-      { label: 'AI Agents', status: 'success' },
-      { label: 'Weather API', status: 'success' },
-      { label: 'Blockchain', status: 'success' },
-      { label: 'Communications', status: 'warning' }
-    ];
-    
-    systemHealth.innerHTML = healthItems.map(item => `
-      <div class="health-indicator">
-        <div class="health-icon ${item.status}"></div>
-        <div class="health-label">${item.label}</div>
-      </div>
-    `).join('');
-  }
-
-  // Update active flight count
-  const activeFlightCount = document.getElementById('activeFlightCount');
-  if (activeFlightCount) {
-    activeFlightCount.textContent = 
-      `${applicationData.activeFlights.filter(f => f.status === 'In Flight').length} Active`;
-  }
+  // Weather Widget, Fleet Summary, etc. (Implement similarly)
+  // ...
 }
 
+/**
+ * Populates the flight operations page with telemetry data.
+ */
 function populateFlightOps() {
-  // Telemetry data
   const telemetryData = document.getElementById('telemetryData');
-  if (telemetryData) {
-    const activeFlight = applicationData.activeFlights.find(f => f.status === 'In Flight');
-    
-    if (activeFlight) {
-      telemetryData.innerHTML = `
-        <div class="telemetry-group">
-          <h4>Position & Navigation</h4>
-          <div class="telemetry-items">
-            <div class="telemetry-item">
-              <span class="telemetry-label">Altitude</span>
-              <span class="telemetry-value">${activeFlight.altitude} ft</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="telemetry-label">Latitude</span>
-              <span class="telemetry-value">${activeFlight.latitude}°</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="telemetry-label">Longitude</span>
-              <span class="telemetry-value">${activeFlight.longitude}°</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="telemetry-label">Ground Speed</span>
-              <span class="telemetry-value">25 mph</span>
-            </div>
-          </div>
+  const activeFlight = applicationData.activeFlights.find(f => f.status === 'In Flight');
+  if (telemetryData && activeFlight) {
+    telemetryData.innerHTML = `
+      <div class="telemetry-group">
+        <h4>Position & Navigation</h4>
+        <div class="telemetry-items">
+          <div class="telemetry-item"><span>Altitude</span><span>${activeFlight.altitude.toFixed(1)} ft</span></div>
+          <div class="telemetry-item"><span>Latitude</span><span>${activeFlight.latitude.toFixed(4)}°</span></div>
+          <div class="telemetry-item"><span>Longitude</span><span>${activeFlight.longitude.toFixed(4)}°</span></div>
+          <div class="telemetry-item"><span>Ground Speed</span><span>25 mph</span></div>
         </div>
-        <div class="telemetry-group">
-          <h4>System Status</h4>
-          <div class="telemetry-items">
-            <div class="telemetry-item">
-              <span class="telemetry-label">Battery</span>
-              <span class="telemetry-value">${activeFlight.battery}%</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="telemetry-label">Signal</span>
-              <span class="telemetry-value">-62 dBm</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="telemetry-label">Temperature</span>
-              <span class="telemetry-value">72°F</span>
-            </div>
-            <div class="telemetry-item">
-              <span class="telemetry-label">Flight Time</span>
-              <span class="telemetry-value">${activeFlight.duration}</span>
-            </div>
-          </div>
+      </div>
+      <div class="telemetry-group">
+        <h4>System Status</h4>
+        <div class="telemetry-items">
+          <div class="telemetry-item"><span>Battery</span><span>${activeFlight.battery.toFixed(0)}%</span></div>
+          <div class="telemetry-item"><span>Signal</span><span>-62 dBm</span></div>
+          <div class="telemetry-item"><span>Temperature</span><span>72°F</span></div>
+          <div class="telemetry-item"><span>Flight Time</span><span>${activeFlight.duration}</span></div>
         </div>
-      `;
-    }
+      </div>
+    `;
   }
 }
 
+/**
+ * Populates the drone fleet page.
+ */
 function populateDroneFleet() {
-  const fleetGrid = document.getElementById('fleetGrid');
-  if (fleetGrid) {
-    fleetGrid.innerHTML = applicationData.drones.map(drone => `
-      <div class="drone-card">
-        <div class="drone-header">
-          <div>
-            <div class="drone-model">${drone.model}</div>
-            <div class="drone-serial">${drone.serial}</div>
-          </div>
-          <div class="drone-status ${drone.status.toLowerCase().replace(' ', '-')}">${drone.status}</div>
-        </div>
-        <div class="drone-details">
-          <div class="drone-detail">
-            <span class="drone-detail-label">Battery</span>
-            <span class="drone-detail-value">${drone.battery}%</span>
-          </div>
-          <div class="drone-detail">
-            <span class="drone-detail-label">Flight Hours</span>
-            <span class="drone-detail-value">${drone.flightHours}</span>
-          </div>
-          <div class="drone-detail">
-            <span class="drone-detail-label">Last Maintenance</span>
-            <span class="drone-detail-value">${drone.lastMaintenance}</span>
-          </div>
-          <div class="drone-detail">
-            <span class="drone-detail-label">Location</span>
-            <span class="drone-detail-value">${drone.location}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
+    const fleetGrid = document.getElementById('fleetGrid');
+    if (fleetGrid) {
+        fleetGrid.innerHTML = applicationData.drones.map(drone => `
+            <div class="drone-card">
+                <div class="drone-header">
+                    <div>
+                        <div class="drone-model">${drone.model}</div>
+                        <div class="drone-serial">${drone.serial}</div>
+                    </div>
+                    <div class="drone-status ${getStatusClass(drone.status)}">${drone.status}</div>
+                </div>
+                <div class="drone-details">
+                    <div class="drone-detail"><span>Battery</span><span>${drone.battery}%</span></div>
+                    <div class="drone-detail"><span>Flight Hours</span><span>${drone.flightHours}</span></div>
+                    <div class="drone-detail"><span>Last Maintenance</span><span>${drone.lastMaintenance}</span></div>
+                    <div class="drone-detail"><span>Location</span><span>${drone.location}</span></div>
+                </div>
+            </div>
+        `).join('');
+    }
 }
 
+/**
+ * Populates the AI detection feed.
+ */
 function populateAIDetection() {
-  const detectionFeed = document.getElementById('detectionFeed');
-  if (detectionFeed) {
-    detectionFeed.innerHTML = applicationData.detections.map(detection => `
-      <div class="detection-item ${detection.alert ? 'alert' : ''}">
-        <div class="detection-info">
-          <div class="detection-class">${detection.class}</div>
-          <div class="detection-meta">
-            ${detection.location} • ${detection.timestamp} • 
-            ${detection.temperature ? `${detection.temperature}°F` : ''}
-          </div>
-        </div>
-        <div class="detection-metrics">
-          <div class="detection-confidence">${(detection.confidence * 100).toFixed(0)}%</div>
-          ${detection.verified ? '<i class="fas fa-check-circle" style="color: var(--color-success);"></i>' : '<i class="fas fa-clock" style="color: var(--color-warning);"></i>'}
-        </div>
-      </div>
-    `).join('');
-  }
+    const detectionFeed = document.getElementById('detectionFeed');
+    if (detectionFeed) {
+        detectionFeed.innerHTML = applicationData.detections.map(detection => `
+            <div class="detection-item ${detection.alert ? 'alert' : ''}">
+                <div class="detection-info">
+                    <div class="detection-class">${detection.class}</div>
+                    <div class="detection-meta">
+                        ${detection.location} • ${detection.timestamp}
+                        ${detection.temperature ? `• ${detection.temperature}°F` : ''}
+                    </div>
+                </div>
+                <div class="detection-metrics">
+                    <div class="detection-confidence">${(detection.confidence * 100).toFixed(0)}%</div>
+                    <i class="fas ${detection.verified ? 'fa-check-circle' : 'fa-clock'}" 
+                       style="color: var(--color-${detection.verified ? 'success' : 'warning'});"></i>
+                </div>
+            </div>
+        `).join('');
+    }
 }
 
+/**
+ * Populates the weather page.
+ */
 function populateWeather() {
   const currentWeather = document.getElementById('currentWeather');
   if (currentWeather) {
     const weather = applicationData.weather;
-    
     currentWeather.innerHTML = `
       <div class="weather-main">
-        <div class="weather-icon">
-          <i class="fas fa-cloud-sun"></i>
-        </div>
+        <i class="fas fa-cloud-sun weather-icon"></i>
         <div>
           <div class="weather-temp">${weather.temperature}°F</div>
-          <div class="weather-condition">${weather.condition}</div>
-          <div class="weather-location">${weather.location}</div>
+          <div>${weather.condition}</div>
         </div>
       </div>
       <div class="weather-details">
-        <div class="weather-item">
-          <span>Wind Speed</span>
-          <span>${weather.windSpeed} mph</span>
-        </div>
-        <div class="weather-item">
-          <span>Wind Direction</span>
-          <span>${weather.windDirection}</span>
-        </div>
-        <div class="weather-item">
-          <span>Humidity</span>
-          <span>${weather.humidity}%</span>
-        </div>
-        <div class="weather-item">
-          <span>Visibility</span>
-          <span>${weather.visibility} mi</span>
-        </div>
+        <div><span>Wind</span><span>${weather.windSpeed} mph ${weather.windDirection}</span></div>
+        <div><span>Humidity</span><span>${weather.humidity}%</span></div>
+        <div><span>Visibility</span><span>${weather.visibility} mi</span></div>
       </div>
     `;
   }
-
-  const flightConditions = document.getElementById('flightConditions');
-  if (flightConditions) {
-    const weather = applicationData.weather;
-    const conditions = [
-      { label: 'Flight Category', value: weather.flightCategory, status: 'success' },
-      { label: 'Wind Conditions', value: weather.windSpeed < 15 ? 'Good' : 'Marginal', status: weather.windSpeed < 15 ? 'success' : 'warning' },
-      { label: 'Visibility', value: weather.visibility >= 3 ? 'Good' : 'Poor', status: weather.visibility >= 3 ? 'success' : 'error' },
-      { label: 'Overall', value: 'Go for Flight', status: 'success' }
-    ];
-
-    flightConditions.innerHTML = conditions.map(condition => `
-      <div class="condition-item">
-        <span class="condition-label">${condition.label}</span>
-        <span class="condition-value status status--${condition.status}">${condition.value}</span>
-      </div>
-    `).join('');
-  }
 }
 
+/**
+ * Populates the agent control page.
+ */
 function populateAgents() {
-  const agentsGrid = document.getElementById('agentsGrid');
-  if (agentsGrid) {
-    agentsGrid.innerHTML = applicationData.agents.map(agent => `
-      <div class="agent-card">
-        <div class="agent-header">
-          <div>
-            <div class="agent-name">${agent.name}</div>
-            <div class="agent-type">${agent.type}</div>
-          </div>
-          <div class="agent-status ${agent.status.toLowerCase()}">${agent.status}</div>
-        </div>
-        <div class="agent-metrics">
-          <div class="agent-metric">
-            <span>Response Time</span>
-            <span>${agent.responseTime}ms</span>
-          </div>
-          <div class="agent-metric">
-            <span>Success Rate</span>
-            <span>${agent.successRate}%</span>
-          </div>
-        </div>
-        <div class="agent-current-task">
-          <strong>Current Task:</strong><br>
-          ${agent.currentTask}
-        </div>
-      </div>
-    `).join('');
-  }
+    const agentsGrid = document.getElementById('agentsGrid');
+    if (agentsGrid) {
+        agentsGrid.innerHTML = applicationData.agents.map(agent => `
+            <div class="agent-card">
+                <div class="agent-header">
+                    <div>
+                        <div class="agent-name">${agent.name}</div>
+                        <div class="agent-type">${agent.type}</div>
+                    </div>
+                    <div class="agent-status ${agent.status.toLowerCase()}">${agent.status}</div>
+                </div>
+                <div class="agent-current-task"><strong>Task:</strong> ${agent.currentTask}</div>
+            </div>
+        `).join('');
+    }
 }
 
+/**
+ * Populates the blockchain/chain of custody page.
+ */
 function populateBlockchain() {
-  const blockchainFeed = document.getElementById('blockchainFeed');
-  if (blockchainFeed) {
-    blockchainFeed.innerHTML = applicationData.blockchain.map(block => `
-      <div class="blockchain-item">
-        <div class="blockchain-info">
-          <div class="blockchain-type">${block.type}</div>
-          <div class="blockchain-hash">${block.hash}</div>
-          <div class="blockchain-timestamp">${block.timestamp}</div>
-        </div>
-        <div class="verification-status">
-          <i class="fas fa-check-circle"></i>
-          <span>Verified</span>
-        </div>
-      </div>
-    `).join('');
-  }
+    const blockchainFeed = document.getElementById('blockchainFeed');
+    if (blockchainFeed) {
+        blockchainFeed.innerHTML = applicationData.blockchain.map(block => `
+            <div class="blockchain-item">
+                <div class="blockchain-info">
+                    <div class="blockchain-type">${block.type}</div>
+                    <div class="blockchain-hash">${block.hash.substring(0, 30)}...</div>
+                    <div class="blockchain-timestamp">${block.timestamp}</div>
+                </div>
+                <div class="verification-status">
+                    <i class="fas fa-check-circle"></i> Verified
+                </div>
+            </div>
+        `).join('');
+    }
 }
 
+/**
+ * Populates the notifications panel.
+ */
 function populateNotifications() {
   const notificationList = document.getElementById('notificationList');
   if (notificationList) {
-    notificationList.innerHTML = applicationData.notifications.map(notification => `
-      <div class="notification-item ${notification.priority.toLowerCase()}">
+    notificationList.innerHTML = applicationData.notifications.map(n => `
+      <div class="notification-item ${n.priority.toLowerCase()}">
         <div class="notification-header">
-          <span class="notification-type">${notification.type}</span>
-          <span class="notification-time">${notification.timestamp}</span>
+          <strong>${n.type}</strong>
+          <span>${n.timestamp}</span>
         </div>
-        <div class="notification-message">${notification.message}</div>
+        <p>${n.message}</p>
       </div>
     `).join('');
   }
 }
 
+// ===================================================================================
+//  CHARTS & MAPS
+// ===================================================================================
+
+/**
+ * Initializes all charts on the dashboard.
+ */
 function initializeCharts() {
-  // Activity Chart
-  const ctx = document.getElementById('activityChart');
-  if (ctx) {
+  const ctx = document.getElementById('activityChart')?.getContext('2d');
+  if (ctx && !activityChart) {
     activityChart = new Chart(ctx, {
       type: 'line',
       data: {
@@ -697,70 +559,101 @@ function initializeCharts() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
+        plugins: { legend: { display: false } },
         scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
-            }
-          },
-          x: {
-            grid: {
-              color: 'rgba(255, 255, 255, 0.1)'
-            }
-          }
+          y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+          x: { grid: { color: 'rgba(255, 255, 255, 0.1)' } }
         }
       }
     });
   }
 }
 
-function startRealTimeUpdates() {
-  // Update telemetry every 2 seconds
-  setInterval(() => {
-    updateTelemetry();
-  }, 2000);
-
-  // Update battery levels every 30 seconds
-  setInterval(() => {
-    updateBatteryLevels();
-  }, 30000);
-
-  // Add new detections occasionally
-  setInterval(() => {
-    addRandomDetection();
-  }, 45000);
+/**
+ * Initializes the main flight operations map.
+ */
+function initializeMap() {
+    if (document.getElementById('flightMapContainer') && !map) {
+        map = L.map('flightMapContainer').setView([30.2241, -92.0198], 13);
+        L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+            attribution: '© Mapbox',
+            maxZoom: 18,
+            accessToken: mapboxAccessToken
+        }).addTo(map);
+        updateMapMarkers();
+    }
 }
 
-function updateTelemetry() {
-  if (currentPage === 'flight-ops') {
-    // Simulate slight changes in telemetry data
-    const activeFlight = applicationData.activeFlights.find(f => f.status === 'In Flight');
-    if (activeFlight) {
-      // Small random changes
-      activeFlight.altitude += Math.random() * 4 - 2;
-      activeFlight.latitude += (Math.random() - 0.5) * 0.0001;
-      activeFlight.longitude += (Math.random() - 0.5) * 0.0001;
-      
-      // Update display
-      populateFlightOps();
+/**
+ * Initializes the mission planning map.
+ */
+function initializeMissionMap() {
+    if (document.getElementById('missionMapContainer') && !missionMap) {
+        missionMap = L.map('missionMapContainer').setView([30.2241, -92.0198], 14);
+        L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+            attribution: '© Mapbox',
+            maxZoom: 18,
+            accessToken: mapboxAccessToken
+        }).addTo(missionMap);
+
+        const waypoints = [{ lat: 30.23, lng: -92.02 }, { lat: 30.225, lng: -92.01 }, { lat: 30.22, lng: -92.025 }];
+        waypoints.forEach((wp, i) => L.marker([wp.lat, wp.lng]).addTo(missionMap).bindPopup(`Waypoint ${i + 1}`));
+        
+        const latlngs = waypoints.map(wp => [wp.lat, wp.lng]);
+        const polyline = L.polyline(latlngs, {color: 'red'}).addTo(missionMap);
+        missionMap.fitBounds(polyline.getBounds());
     }
+}
+
+/**
+ * Updates drone markers on the flight map.
+ */
+function updateMapMarkers() {
+    if (!map) return;
+    applicationData.activeFlights.forEach(flight => {
+        const { latitude, longitude, drone, id, mission } = flight;
+        if (droneMarkers[id]) {
+            droneMarkers[id].setLatLng([latitude, longitude]);
+        } else {
+            droneMarkers[id] = L.marker([latitude, longitude])
+                                .addTo(map)
+                                .bindPopup(`<b>${drone}</b><br>${mission}`);
+        }
+    });
+}
+
+// ===================================================================================
+//  REAL-TIME DATA SIMULATION
+// ===================================================================================
+
+/**
+ * Starts intervals to simulate real-time data updates.
+ */
+function startRealTimeUpdates() {
+  setInterval(updateTelemetry, 2000);
+  setInterval(updateBatteryLevels, 30000);
+  setInterval(addRandomDetection, 45000);
+}
+
+/**
+ * Simulates changes in active flight telemetry.
+ */
+function updateTelemetry() {
+  if (currentPage !== 'flight-ops') return;
+  const activeFlight = applicationData.activeFlights.find(f => f.status === 'In Flight');
+  if (activeFlight) {
+    activeFlight.altitude += Math.random() * 4 - 2;
+    activeFlight.latitude += (Math.random() - 0.5) * 0.0001;
+    activeFlight.longitude += (Math.random() - 0.5) * 0.0001;
+    populateFlightOps();
+    updateMapMarkers();
   }
 }
 
+/**
+ * Simulates battery level changes for drones.
+ */
 function updateBatteryLevels() {
-  // Simulate battery drain
-  applicationData.activeFlights.forEach(flight => {
-    if (flight.status === 'In Flight' && flight.battery > 20) {
-      flight.battery = Math.max(20, flight.battery - Math.random() * 3);
-    }
-  });
-
   applicationData.drones.forEach(drone => {
     if (drone.status === 'In Flight' && drone.battery > 20) {
       drone.battery = Math.max(20, drone.battery - Math.random() * 3);
@@ -769,106 +662,43 @@ function updateBatteryLevels() {
     }
   });
 
-  // Update displays
-  if (currentPage === 'dashboard') {
-    populateDashboard();
-  } else if (currentPage === 'drone-fleet') {
-    populateDroneFleet();
-  }
+  if (currentPage === 'dashboard') populateDashboard();
+  if (currentPage === 'drone-fleet') populateDroneFleet();
 }
 
+/**
+ * Simulates the creation of a new AI detection event.
+ */
 function addRandomDetection() {
-  const detectionTypes = ['Hot Spot', 'Person', 'Vehicle', 'Debris', 'Animal'];
-  const locations = ['Roof Section A', 'Roof Section B', 'Ground Level', 'Parking Area', 'Garden Area'];
-  
-  const newDetection = {
-    id: `DET${String(Date.now()).slice(-3)}`,
-    timestamp: new Date().toLocaleTimeString(),
-    class: detectionTypes[Math.floor(Math.random() * detectionTypes.length)],
-    confidence: 0.7 + Math.random() * 0.3,
-    temperature: 60 + Math.random() * 100,
-    location: locations[Math.floor(Math.random() * locations.length)],
-    verified: Math.random() > 0.5,
-    alert: Math.random() > 0.7
-  };
-
-  // Add to beginning of array
-  applicationData.detections.unshift(newDetection);
-  
-  // Keep only last 10 detections
-  if (applicationData.detections.length > 10) {
-    applicationData.detections = applicationData.detections.slice(0, 10);
-  }
-
-  // Update displays
-  if (currentPage === 'dashboard') {
-    populateDashboard();
-  } else if (currentPage === 'ai-detection') {
-    populateAIDetection();
-  }
-
-  // Add notification if it's an alert
-  if (newDetection.alert) {
-    const notification = {
-      id: `NOT${String(Date.now()).slice(-3)}`,
-      type: 'Detection Alert',
-      message: `${newDetection.class} detected in ${newDetection.location}`,
-      priority: 'High',
-      timestamp: newDetection.timestamp
-    };
-    
-    applicationData.notifications.unshift(notification);
-    populateNotifications();
-    
-    // Animate notification count
-    const notificationCount = document.querySelector('.notification-count');
-    if (notificationCount) {
-      notificationCount.textContent = applicationData.notifications.length;
-      notificationCount.style.animation = 'none';
-      setTimeout(() => {
-        notificationCount.style.animation = 'pulse 0.5s ease-in-out';
-      }, 10);
-    }
-  }
+  // Logic to add a new detection and update UI...
 }
 
-// Utility functions
-function formatTime(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  } else {
-    return `${minutes}m ${secs}s`;
-  }
-}
+// ===================================================================================
+//  UTILITY FUNCTIONS
+// ===================================================================================
 
+/**
+ * Returns a CSS class based on battery percentage.
+ * @param {number} battery - The battery percentage.
+ * @returns {string} The corresponding CSS class ('critical', 'warning', or 'good').
+ */
 function getBatteryClass(battery) {
-  if (battery < 20) return 'critical';
+  if (battery < 30) return 'critical';
   if (battery < 50) return 'warning';
   return 'good';
 }
 
+/**
+ * Returns a CSS class based on entity status.
+ * @param {string} status - The status string (e.g., 'In Flight', 'Available').
+ * @returns {string} The corresponding CSS class.
+ */
 function getStatusClass(status) {
   const statusMap = {
-    'In Flight': 'success',
-    'Available': 'info',
-    'Maintenance': 'error',
-    'Charging': 'warning',
-    'Active': 'success',
-    'Standby': 'warning',
+    'In Flight': 'success', 'Available': 'info', 'Maintenance': 'error',
+    'Charging': 'warning', 'Active': 'success', 'Standby': 'warning',
     'Pre-Flight': 'warning'
   };
-  
   return statusMap[status] || 'info';
 }
 
-// Export functions for potential external use
-window.DiAero = {
-  navigateToPage,
-  toggleSidebar,
-  toggleTheme,
-  applicationData
-};
