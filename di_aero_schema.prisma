@@ -1,0 +1,849 @@
+// DI AERO (Aerial Enhanced Reconnaissance and Operations) Database Schema
+// Prisma ORM Schema for Drone Institute Lafayette, Louisiana
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  extensions = [postgis, timescaledb]
+}
+
+// ===== USER MANAGEMENT =====
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  username      String      @unique
+  firstName     String
+  lastName      String
+  role          UserRole    @default(PILOT)
+
+  // FAA Certification
+  part107License String?
+  licenseExpiry  DateTime?
+  certificationLevel String?
+
+  // Profile
+  avatar        String?
+  phoneNumber   String?
+  organization  String?
+  department    String?
+
+  // Security
+  passwordHash  String
+  apiKey        String?     @unique
+  lastLogin     DateTime?
+  isActive      Boolean     @default(true)
+
+  // Relationships
+  pilotSessions FlightSession[] @relation("Pilot")
+  supervisorSessions FlightSession[] @relation("Supervisor")
+  droneAssignments DroneAssignment[]
+  notifications UserNotification[]
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  SUPERVISOR
+  PILOT
+  STUDENT
+  OBSERVER
+  INSTRUCTOR
+}
+
+// ===== DRONE FLEET MANAGEMENT =====
+model Drone {
+  id            String      @id @default(cuid())
+  serialNumber  String      @unique
+  model         DroneModel
+  manufacturer  String      @default("DJI")
+
+  // Hardware Configuration
+  thermalCamera Boolean     @default(false)
+  zoomCamera    Boolean     @default(true)
+  rtk           Boolean     @default(false)
+  lidar         Boolean     @default(false)
+
+  // Operational Status
+  status        DroneStatus @default(AVAILABLE)
+  batteryLevel  Float?
+  lastMaintenance DateTime?
+  nextMaintenance DateTime?
+  flightHours   Float       @default(0)
+
+  // Location
+  currentLat    Float?
+  currentLng    Float?
+  currentAlt    Float?
+  homeBaseLat   Float
+  homeBaseLng   Float
+
+  // Firmware
+  firmwareVersion String?
+  lastFirmwareUpdate DateTime?
+
+  // Relationships
+  assignments   DroneAssignment[]
+  flightSessions FlightSession[]
+  telemetryData TelemetryData[]
+  missionPlans  MissionPlan[]
+  maintenanceLogs MaintenanceLog[]
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("drones")
+}
+
+enum DroneModel {
+  MAVIC_3
+  MAVIC_3T
+  MAVIC_3_ENTERPRISE
+  MAVIC_3_CLASSIC
+}
+
+enum DroneStatus {
+  AVAILABLE
+  IN_FLIGHT
+  MAINTENANCE
+  CHARGING
+  OFFLINE
+  CRASHED
+}
+
+// ===== FLIGHT OPERATIONS =====
+model FlightSession {
+  id            String      @id @default(cuid())
+  sessionNumber String      @unique
+
+  // Basic Info
+  title         String
+  description   String?
+  purpose       FlightPurpose
+
+  // Personnel
+  pilotId       String
+  pilot         User        @relation("Pilot", fields: [pilotId], references: [id])
+  supervisorId  String?
+  supervisor    User?       @relation("Supervisor", fields: [supervisorId], references: [id])
+
+  // Drone
+  droneId       String
+  drone         Drone       @relation(fields: [droneId], references: [id])
+
+  // Flight Plan
+  missionPlanId String?
+  missionPlan   MissionPlan? @relation(fields: [missionPlanId], references: [id])
+
+  // Timing
+  plannedStartTime DateTime
+  actualStartTime  DateTime?
+  plannedEndTime   DateTime
+  actualEndTime    DateTime?
+  duration         Int?       // in seconds
+
+  // Weather Conditions
+  weatherId     String?
+  weather       WeatherData? @relation(fields: [weatherId], references: [id])
+
+  // Status
+  status        FlightStatus @default(PLANNED)
+
+  // Geofencing
+  maxAltitude   Float       @default(400) // feet AGL
+  operationRadius Float     @default(1000) // meters
+
+  // Regulatory
+  part107Compliant Boolean   @default(true)
+  airspaceAuth  String?     // LAANC authorization number
+
+  // Relationships
+  telemetryData TelemetryData[]
+  detections    ObjectDetection[]
+  mediaFiles    MediaFile[]
+  incidents     Incident[]
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("flight_sessions")
+}
+
+enum FlightPurpose {
+  TRAINING
+  INSPECTION
+  SURVEILLANCE
+  MAPPING
+  EMERGENCY_RESPONSE
+  RESEARCH
+  DEMONSTRATION
+}
+
+enum FlightStatus {
+  PLANNED
+  PRE_FLIGHT_CHECK
+  TAKEOFF
+  IN_FLIGHT
+  LANDING
+  COMPLETED
+  ABORTED
+  EMERGENCY
+}
+
+// ===== MISSION PLANNING =====
+model MissionPlan {
+  id            String      @id @default(cuid())
+  name          String
+  description   String?
+  missionType   MissionType
+
+  // Waypoints (stored as JSON)
+  waypoints     Json        // Array of waypoint objects
+  flightPath    Json?       // Computed flight path
+
+  // Parameters
+  altitude      Float       @default(100) // feet AGL
+  speed         Float       @default(15)  // mph  
+  overlap       Float       @default(80)  // percentage for mapping
+
+  // Area of Operation
+  areaGeoJSON   Json?       // GeoJSON polygon
+  centerLat     Float
+  centerLng     Float
+  radius        Float       @default(500) // meters
+
+  // Timing
+  estimatedDuration Int     // seconds
+
+  // AI Configuration
+  detectionModel String    @default("YOLOv8-thermal")
+  confidenceThreshold Float @default(0.7)
+
+  // Status
+  isTemplate    Boolean     @default(false)
+  isApproved    Boolean     @default(false)
+  approvedBy    String?
+
+  // Relationships
+  drone         Drone       @relation(fields: [droneId], references: [id])
+  droneId       String
+  createdBy     User        @relation(fields: [createdById], references: [id])
+  createdById   String
+  flightSessions FlightSession[]
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("mission_plans")
+}
+
+enum MissionType {
+  GRID_MAPPING
+  PERIMETER_PATROL
+  POINT_INSPECTION
+  THERMAL_SURVEY
+  SEARCH_AND_RESCUE
+  INFRASTRUCTURE_MONITORING
+  EMERGENCY_ASSESSMENT
+}
+
+// ===== REAL-TIME TELEMETRY =====
+model TelemetryData {
+  id            String      @id @default(cuid())
+
+  // Session Reference
+  flightSessionId String
+  flightSession FlightSession @relation(fields: [flightSessionId], references: [id])
+  droneId       String
+  drone         Drone       @relation(fields: [droneId], references: [id])
+
+  // Timestamp
+  timestamp     DateTime    @default(now())
+
+  // Position
+  latitude      Float
+  longitude     Float
+  altitude      Float       // feet AGL
+  altitudeAmsl  Float       // feet AMSL
+
+  // Orientation
+  roll          Float       // degrees
+  pitch         Float       // degrees
+  yaw           Float       // degrees
+  heading       Float       // degrees
+
+  // Velocity
+  velocityX     Float       // m/s
+  velocityY     Float       // m/s
+  velocityZ     Float       // m/s
+  groundSpeed   Float       // mph
+
+  // Aircraft Status
+  batteryLevel  Float       // percentage
+  batteryVoltage Float      // volts
+  gpsSignal     Int         // number of satellites
+  gpsAccuracy   Float       // meters
+
+  // Sensors
+  temperature   Float?      // celsius
+  humidity      Float?      // percentage
+  barometer     Float?      // mbar
+
+  // Flight Mode
+  flightMode    String
+  armed         Boolean
+  connected     Boolean
+
+  // Home Position  
+  homeDistance  Float?      // meters
+
+  @@index([flightSessionId, timestamp])
+  @@index([droneId, timestamp])
+  @@map("telemetry_data")
+}
+
+// ===== AI OBJECT DETECTION =====
+model ObjectDetection {
+  id            String      @id @default(cuid())
+
+  // Session Reference
+  flightSessionId String
+  flightSession FlightSession @relation(fields: [flightSessionId], references: [id])
+
+  // Detection Info
+  timestamp     DateTime    @default(now())
+  latitude      Float
+  longitude     Float
+  altitude      Float
+
+  // ML Model
+  modelName     String      @default("YOLOv8-thermal")
+  modelVersion  String      @default("1.0")
+  inferenceTime Float       // milliseconds
+
+  // Detection Results
+  objectClass   String      // e.g., "person", "vehicle", "hot_spot"
+  confidence    Float       // 0.0 to 1.0
+  boundingBox   Json        // [x, y, width, height]
+
+  // Thermal Data (if applicable)
+  temperature   Float?      // celsius
+  thermalSignature Json?    // thermal characteristics
+
+  // Image Reference
+  imageId       String?
+  imageFile     MediaFile?  @relation(fields: [imageId], references: [id])
+
+  // Verification
+  verified      Boolean     @default(false)
+  verifiedBy    String?
+  verificationNotes String?
+
+  // Alert Status
+  isAlert       Boolean     @default(false)
+  alertSent     Boolean     @default(false)
+  alertLevel    AlertLevel  @default(LOW)
+
+  // Blockchain Hash
+  blockchainHash String?    @unique
+  merkleRoot    String?
+
+  @@index([flightSessionId, timestamp])
+  @@index([objectClass, confidence])
+  @@map("object_detections")
+}
+
+enum AlertLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ===== MEDIA FILES =====
+model MediaFile {
+  id            String      @id @default(cuid())
+
+  // File Info
+  filename      String
+  originalName  String
+  fileType      MediaType
+  fileSize      Int         // bytes
+  mimeType      String
+
+  // Storage
+  storageProvider String    @default("AWS_S3")
+  storagePath   String      // S3 key or file path
+  publicUrl     String?
+  thumbnailUrl  String?
+
+  // Metadata
+  width         Int?
+  height        Int?
+  duration      Float?      // seconds for video
+
+  // Geolocation
+  latitude      Float?
+  longitude     Float?
+  altitude      Float?
+  heading       Float?
+
+  // Camera Settings
+  shutterSpeed  String?
+  aperture      String?
+  iso           Int?
+  focalLength   Float?
+
+  // Thermal Data (if thermal image)
+  minTemp       Float?      // celsius
+  maxTemp       Float?      // celsius
+  avgTemp       Float?      // celsius
+  thermalPalette String?
+
+  // Session Reference
+  flightSessionId String?
+  flightSession FlightSession? @relation(fields: [flightSessionId], references: [id])
+
+  // AI Analysis
+  detections    ObjectDetection[]
+  analyzed      Boolean     @default(false)
+  analysisResults Json?
+
+  // Chain of Custody
+  blockchainHash String?    @unique
+  hashSha256    String
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([flightSessionId, createdAt])
+  @@index([fileType, createdAt])
+  @@map("media_files")
+}
+
+enum MediaType {
+  PHOTO_VISIBLE
+  PHOTO_THERMAL
+  VIDEO_VISIBLE
+  VIDEO_THERMAL
+  RAW_THERMAL
+}
+
+// ===== WEATHER INTEGRATION =====
+model WeatherData {
+  id            String      @id @default(cuid())
+
+  // Location
+  latitude      Float
+  longitude     Float
+  location      String?     // human readable location
+
+  // Timestamp
+  observationTime DateTime
+  forecastTime  DateTime?
+
+  // Weather Conditions
+  temperature   Float       // fahrenheit
+  humidity      Float       // percentage
+  windSpeed     Float       // mph
+  windDirection Float       // degrees
+  windGust      Float?      // mph
+  visibility    Float       // statute miles
+
+  // Atmospheric
+  pressure      Float       // inches of mercury
+  dewPoint      Float       // fahrenheit
+  cloudCover    Int         // percentage
+
+  // Precipitation
+  precipitation Float       @default(0) // inches
+  precipType    String?     // rain, snow, etc.
+
+  // Flight Conditions
+  flightCategory FlightCategory
+
+  // Weather Alerts
+  alerts        Json?       // Array of NWS alerts
+
+  // Data Source
+  source        String      @default("NOAA")
+  stationId     String?
+
+  // Relationships
+  flightSessions FlightSession[]
+
+  @@index([latitude, longitude, observationTime])
+  @@map("weather_data")
+}
+
+enum FlightCategory {
+  VFR          // Visual Flight Rules
+  MVFR         // Marginal VFR
+  IFR          // Instrument Flight Rules
+  LIFR         // Low IFR
+  NO_FLY       // Dangerous conditions
+}
+
+// ===== AGENT ORCHESTRATION =====
+model Agent {
+  id            String      @id @default(cuid())
+  name          String      @unique
+  type          AgentType
+  description   String?
+
+  // Configuration
+  modelName     String      // e.g., "gemini-1.5-pro"
+  temperature   Float       @default(0.3)
+  maxTokens     Int         @default(1000)
+  systemPrompt  String
+
+  // Capabilities
+  tools         Json        // Array of available tools
+  permissions   Json        // Array of permissions
+
+  // State
+  isActive      Boolean     @default(true)
+  currentTask   String?
+
+  // Performance
+  totalInvocations Int      @default(0)
+  avgResponseTime Float?    // milliseconds
+  successRate   Float?     // percentage
+
+  // Relationships
+  conversations AgentConversation[]
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("agents")
+}
+
+enum AgentType {
+  NOVA          // Flight coordinator
+  MARLA         // Mission analyzer  
+  RHEA          // Risk evaluator
+  VAL           // Validation agent
+  HAIL_M        // Health monitoring
+}
+
+model AgentConversation {
+  id            String      @id @default(cuid())
+
+  // Agent
+  agentId       String
+  agent         Agent       @relation(fields: [agentId], references: [id])
+
+  // Session Context
+  sessionId     String      // Could be flight session or other context
+  userId        String?
+
+  // Message Chain
+  messages      Json        // Array of messages
+
+  // Performance
+  startTime     DateTime    @default(now())
+  endTime       DateTime?
+  responseTime  Int?        // milliseconds
+  tokenCount    Int?
+
+  // Status
+  status        ConversationStatus @default(ACTIVE)
+
+  @@index([agentId, startTime])
+  @@map("agent_conversations")
+}
+
+enum ConversationStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+  TIMEOUT
+}
+
+// ===== BLOCKCHAIN CHAIN OF CUSTODY =====
+model BlockchainRecord {
+  id            String      @id @default(cuid())
+
+  // Block Info
+  blockHash     String      @unique
+  previousHash  String?
+  merkleRoot    String
+
+  // Transaction
+  transactionId String      @unique
+  transactionType TransactionType
+
+  // Data
+  dataHash      String      // SHA-256 of the data
+  dataSize      Int         // bytes
+  metadata      Json
+
+  // Timestamps
+  timestamp     DateTime    @default(now())
+  ntpTimestamp  String      // Network Time Protocol timestamp
+
+  // Verification
+  isValid       Boolean     @default(true)
+  validatedBy   String?
+  validationTime DateTime?
+
+  // Relationships
+  mediaFiles    String[]    // Array of media file IDs
+  detections    String[]    // Array of detection IDs
+
+  @@index([blockHash])
+  @@index([transactionType, timestamp])
+  @@map("blockchain_records")
+}
+
+enum TransactionType {
+  MEDIA_UPLOAD
+  DETECTION_CREATED
+  FLIGHT_STARTED
+  FLIGHT_COMPLETED
+  MISSION_APPROVED
+  INCIDENT_REPORTED
+}
+
+// ===== INCIDENTS & ALERTS =====
+model Incident {
+  id            String      @id @default(cuid())
+
+  // Classification
+  type          IncidentType
+  severity      IncidentSeverity
+  title         String
+  description   String
+
+  // Location
+  latitude      Float?
+  longitude     Float?
+  altitude      Float?
+
+  // Time
+  occurredAt    DateTime
+  resolvedAt    DateTime?
+
+  // Flight Session
+  flightSessionId String?
+  flightSession FlightSession? @relation(fields: [flightSessionId], references: [id])
+
+  // Response
+  reportedBy    String
+  assignedTo    String?
+  status        IncidentStatus @default(OPEN)
+  resolution    String?
+
+  // Evidence
+  mediaFiles    String[]    // Array of media file IDs
+  telemetrySnapshot Json?
+
+  // Notifications
+  alertsSent    Boolean     @default(false)
+  notifiedUsers String[]    // Array of user IDs
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([type, severity])
+  @@index([occurredAt])
+  @@map("incidents")
+}
+
+enum IncidentType {
+  EQUIPMENT_FAILURE
+  WEATHER_EMERGENCY
+  AIRSPACE_VIOLATION
+  LOSS_OF_CONTROL
+  HARD_LANDING
+  COLLISION
+  BATTERY_FAILURE
+  GPS_LOSS
+  COMMUNICATION_LOSS
+  UNAUTHORIZED_PERSON
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+  CATASTROPHIC
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  CLOSED
+}
+
+// ===== NOTIFICATIONS =====
+model UserNotification {
+  id            String      @id @default(cuid())
+
+  // Recipient
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+
+  // Content
+  title         String
+  message       String
+  type          NotificationType
+  priority      NotificationPriority @default(NORMAL)
+
+  // Channels
+  channels      Json        // Array of delivery channels
+
+  // Status
+  isRead        Boolean     @default(false)
+  isDelivered   Boolean     @default(false)
+  deliveredAt   DateTime?
+  readAt        DateTime?
+
+  // Context
+  contextType   String?     // e.g., "flight_session", "incident"
+  contextId     String?     // ID of the related object
+
+  // Audit
+  createdAt     DateTime    @default(now())
+
+  @@index([userId, isRead])
+  @@index([type, priority])
+  @@map("user_notifications")
+}
+
+enum NotificationType {
+  FLIGHT_ALERT
+  WEATHER_WARNING
+  SYSTEM_UPDATE
+  MAINTENANCE_DUE
+  INCIDENT_REPORT
+  TRAINING_REMINDER
+  REGULATORY_UPDATE
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ===== MAINTENANCE & COMPLIANCE =====
+model MaintenanceLog {
+  id            String      @id @default(cuid())
+
+  // Drone
+  droneId       String
+  drone         Drone       @relation(fields: [droneId], references: [id])
+
+  // Maintenance Info
+  type          MaintenanceType
+  description   String
+  performedBy   String
+
+  // Timing
+  scheduledDate DateTime?
+  performedDate DateTime
+  nextDueDate   DateTime?
+
+  // Parts & Costs
+  partsUsed     Json?       // Array of parts
+  laborHours    Float?
+  totalCost     Float?
+
+  // Compliance
+  regulatoryRef String?     // Reference to regulation
+  certifiedBy   String?     // Certified technician
+
+  // Status
+  status        MaintenanceStatus @default(COMPLETED)
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([droneId, performedDate])
+  @@map("maintenance_logs")
+}
+
+enum MaintenanceType {
+  ROUTINE_INSPECTION
+  BATTERY_REPLACEMENT
+  FIRMWARE_UPDATE
+  CALIBRATION
+  REPAIR
+  PREVENTIVE
+  REGULATORY_COMPLIANCE
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  DEFERRED
+  CANCELLED
+}
+
+// ===== DRONE ASSIGNMENTS =====
+model DroneAssignment {
+  id            String      @id @default(cuid())
+
+  // Assignment
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  droneId       String
+  drone         Drone       @relation(fields: [droneId], references: [id])
+
+  // Timing
+  assignedAt    DateTime    @default(now())
+  validUntil    DateTime?
+  revokedAt     DateTime?
+
+  // Purpose
+  purpose       String?
+  notes         String?
+
+  // Status
+  isActive      Boolean     @default(true)
+
+  @@unique([userId, droneId, assignedAt])
+  @@map("drone_assignments")
+}
+
+// ===== SYSTEM CONFIGURATION =====
+model SystemConfig {
+  id            String      @id @default(cuid())
+  key           String      @unique
+  value         Json
+  category      String
+  description   String?
+
+  // Security
+  isEncrypted   Boolean     @default(false)
+  accessLevel   String      @default("admin")
+
+  // Audit
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  modifiedBy    String?
+
+  @@map("system_config")
+}
