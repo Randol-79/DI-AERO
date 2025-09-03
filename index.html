@@ -235,18 +235,15 @@
                     </div>
                     <div class="card-body">
                         <div class="flight-map" id="flightMap">
-                            <div class="map-placeholder">
-                                <i class="fas fa-map"></i>
-                                <p>Interactive Flight Map</p>
-                                <div class="drone-markers">
-                                    <div class="drone-marker active" style="top: 40%; left: 60%;">
-                                        <i class="fas fa-helicopter"></i>
-                                        <span class="drone-label">Mavic 3T-01</span>
-                                    </div>
-                                    <div class="drone-marker standby" style="top: 70%; left: 30%;">
-                                        <i class="fas fa-helicopter"></i>
-                                        <span class="drone-label">Mavic 3-02</span>
-                                    </div>
+                            <img src="drone_architecture.png" alt="Flight Map" class="map-image">
+                            <div class="drone-markers">
+                                <div class="drone-marker active" style="top: 40%; left: 60%;">
+                                    <i class="fas fa-helicopter"></i>
+                                    <span class="drone-label">Mavic 3T-01</span>
+                                </div>
+                                <div class="drone-marker standby" style="top: 70%; left: 30%;">
+                                    <i class="fas fa-helicopter"></i>
+                                    <span class="drone-label">Mavic 3-02</span>
                                 </div>
                             </div>
                         </div>
@@ -390,17 +387,18 @@
                     <div class="card-body">
                         <div class="thermal-display">
                             <div class="thermal-image">
+                                 <img src="04-15-32-170_radiometric.jpg" alt="Thermal Analysis" class="thermal-image-display">
                                 <div class="thermal-overlay">
-                                    <div class="hot-spot" style="top: 30%; left: 40%;">
-                                        <span class="temp-reading">156°F</span>
+                                    <div class="hot-spot" style="top: 10%; left: 52%;">
+                                        <span class="temp-reading">185°F</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="thermal-scale">
                                 <div class="scale-bar"></div>
                                 <div class="scale-labels">
-                                    <span>60°F</span>
-                                    <span>200°F</span>
+                                    <span>50°F</span>
+                                    <span>250°F</span>
                                 </div>
                             </div>
                         </div>
@@ -410,6 +408,7 @@
                 <div class="card detection-feed-card">
                     <div class="card-header">
                         <h3>Detection Feed</h3>
+                         <img src="Aerial_Thermal_Imaging_roof.jpg" alt="Detection Feed" class="detection-feed-image">
                         <span class="status status--success">Real-time</span>
                     </div>
                     <div class="card-body">
@@ -561,3 +560,4 @@
     <script src="app.js"></script>
 </body>
 </html>
+
